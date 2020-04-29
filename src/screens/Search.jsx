@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, AsyncStorage, RefreshControl } from 'react-native';
+import { Icon, Left, Right, Item, Button } from 'native-base';
 import { PacmanIndicator } from 'react-native-indicators';
 import { connect } from 'react-redux';
 import { setWordInfo } from '../redux/Actions';
@@ -9,99 +10,174 @@ import Menu from '../components/Menu';
 
 function Search({ navigation, currentWord, wordInfo, dispatch }) {
 
-    let [loading, SetLoading] = useState(true);
+  const [loading, SetLoading] = useState(true);
+  const [isFavorite, SetIsFavorite] = useState(false);
 
-    useEffect(() => {
-        getWordInfo();
-    }, [currentWord]);
 
-    let getWordInfo = () => {
-        SetLoading(true);
+  useEffect(() => {
+    getWordInfo();
+  }, [currentWord]);
 
-        fetch("https://api.dictionaryapi.dev/api/v1/entries/en/" + currentWord, { method: 'GET' })
-            .then((res) => res.json())
-            .then((json) => {
-                if (!!json[0]) {
-                    dispatch(setWordInfo(json[0].meaning));
-                } else {
-                    dispatch(setWordInfo(undefined));
-                }
-                SetLoading(false);
-            });
+  let getWordInfo = () => {
+    SetLoading(true);
+
+    fetch("https://api.dictionaryapi.dev/api/v1/entries/en/" + currentWord, { method: 'GET' })
+      .then((res) => res.json())
+      .then((json) => {
+        if (!!json[0]) {
+          dispatch(setWordInfo(json[0].meaning));
+        } else {
+          dispatch(setWordInfo(undefined));
+        }
+
+        return getWordFromStorage(currentWord);
+      })
+      .then((info) => {
+        if (info !== null)
+          SetIsFavorite(true)
+        else
+          SetIsFavorite(false);
+
+        SetLoading(false);
+      });
+  }
+
+  let addOrRemoveWordFromMyVocabulary = async () => {
+    if (await getWordFromStorage(currentWord) === null) {
+      await setWordToStorage(currentWord);
+    } else {
+      await removeWordFromStorage(currentWord);
     }
 
-    return (
-        <>
-            <Menu navigation={navigation} />
-            {
-                loading ?
-                    <View style={styles.loadingBarContainer}>
-                        <PacmanIndicator color='#36393E' />
-                    </View>
-                    :
-                    <ScrollView
-                        style={styles.container}
-                        showsVerticalScrollIndicator={false}
-                        showsHorizontalScrollIndicator={false}>
+    // navigation.reset({
+    //   index: 0,
+    //   routes: [{ name: 'Vocabulary' }],
+    // });
+  }
 
-                        <Text style={styles.currentWord}>{currentWord}</Text>
-                        {
-                            !!wordInfo ?
-                                <View>
-                                    {
-                                        Object.keys(wordInfo).map((value, index) =>
-                                            <WordDefinition
-                                                meaning={Object.keys(wordInfo)[index]}
-                                                definition={wordInfo[value][0].definition}
-                                                example={wordInfo[value][0].example}
-                                                isLast={index === Object.keys(wordInfo).length-1 ? true : false}
-                                                key={index} />
-                                        )
-                                    }
-                                </View>
-                                :
-                                <View style={styles.notFoundContainer}>
-                                    <Text>Word not found</Text>
-                                </View>
-                        }   
-                    </ScrollView>
+  let getWordFromStorage = async (word) => {
+    return await AsyncStorage.getItem(word);
+  }
+
+  let setWordToStorage = async (word) => {
+    await AsyncStorage.setItem(word, word);
+    SetIsFavorite(true);
+  }
+
+  let removeWordFromStorage = async (word) => {
+    await AsyncStorage.removeItem(word);
+    SetIsFavorite(false);
+  }
+
+  // const wait = (timeout) => {
+  //   return new Promise(resolve => {
+  //     setTimeout(resolve, timeout);
+  //   });
+  // }
+
+  const onRefresh = () => {
+    // setRefreshing(true);
+    getWordInfo();
+    // wait(1000).then(() => setRefreshing(false));
+  }
+
+  return (
+    <>
+      <Menu navigation={navigation} SetLoading={SetLoading}/>
+      {
+        loading ?
+          <View style={styles.loadingBarContainer}>
+            <PacmanIndicator color='#36393E' />
+          </View>
+          :
+          <ScrollView
+            style={styles.container}
+            showsVerticalScrollIndicator={false}
+            showsHorizontalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl onRefresh={onRefresh} />
+            }>
+
+            <Item style={styles.header}>
+              <Left>
+                <Text style={styles.currentWord}>{currentWord}</Text>
+              </Left>
+              <Right>
+                <Button transparent onPress={addOrRemoveWordFromMyVocabulary}>
+                  <Icon name="star" style={isFavorite ? styles.isFavorite : styles.isNotfavorite} />
+                </Button>
+              </Right>
+            </Item>
+            {
+              !!wordInfo ?
+                <View>
+                  {
+                    Object.keys(wordInfo).map((value, index) =>
+                      <WordDefinition
+                        meaning={Object.keys(wordInfo)[index]}
+                        definition={wordInfo[value][0].definition}
+                        example={wordInfo[value][0].example}
+                        isLast={index === Object.keys(wordInfo).length - 1 ? true : false}
+                        key={index} />
+                    )
+                  }
+                </View>
+                :
+                <View style={styles.notFoundContainer}>
+                  <Text>Word not found</Text>
+                </View>
             }
-        </>
-    );
+          </ScrollView>
+      }
+    </>
+  );
 }
 
 function mapStateToProps(state) {
-    return {
-        currentWord: state.currentWord,
-        wordInfo: state.wordInfo
-    };
+  return {
+    currentWord: state.currentWord,
+    wordInfo: state.wordInfo
+  };
 }
 
 export default connect(mapStateToProps)(Search);
 
 let styles = StyleSheet.create({
-    container: {
-        margin: 10
-    },
+  container: {
+    margin: 10
+  },
 
-    currentWord: {
-        fontSize: 30,
-        borderBottomColor: "#36393E",
-        borderBottomWidth: 2
-    },
+  currentWord: {
+    fontSize: 30,
+  },
 
-    loadingBarContainer: {
-        position: "absolute",
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0
-    },
+  header: {
+    borderBottomColor: "#36393E",
+    borderBottomWidth: 2
+  },
 
-    notFoundContainer: {
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: 100
-    },
+  loadingBarContainer: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0
+  },
+
+  notFoundContainer: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: 100
+  },
+
+  isNotfavorite: {
+    fontSize: 30,
+    color: "#36393E"
+  },
+
+  isFavorite: {
+    fontSize: 30,
+    color: "#4e77ad"
+  }
 });

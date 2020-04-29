@@ -14,7 +14,7 @@ export default function App() {
         <NavigationContainer>
             <Drawer.Navigator initialRouteName="Search">
                 <Drawer.Screen name="Search" component={Search} />
-                <Drawer.Screen name="My vocabulary" component={MyVocabulary} />
+                <Drawer.Screen name="Vocabulary" component={MyVocabulary} />
             </Drawer.Navigator>
         </NavigationContainer>
     );

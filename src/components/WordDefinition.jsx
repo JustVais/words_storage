@@ -2,7 +2,6 @@ import React from 'react';
 import {StyleSheet, View, Text } from 'react-native';
 
 function WordDefinition({ meaning, definition, example, isLast}) {
-    console.log(isLast);
     return (
         <View style={isLast ? styles.containerWithOutBorder : styles.containerWithBorder}>
             <Text style={styles.meaning}>{ "• " + meaning + ":"}</Text>

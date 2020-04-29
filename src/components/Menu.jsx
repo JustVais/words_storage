@@ -5,13 +5,14 @@ import { Header, Item, Input, Icon } from 'native-base';
 import {setCurrentWord} from '../redux/Actions';
 
 
-function Menu({ navigation, dispatch}) {
+function Menu({ navigation, dispatch, SetLoading}) {
 
     let [inputText, setInputText] = useState("");
 
-    let onClickDoneHandler = () => {
+    let onClickDoneHandler = async () => {
         if (inputText.length != 0 && /^[a-zA-Z]+$/i.test(inputText)) {
-            dispatch(setCurrentWord(inputText));
+            await SetLoading(true);
+            dispatch(setCurrentWord(inputText.toLowerCase()));
             setInputText('');
         }
     }
@@ -22,7 +23,7 @@ function Menu({ navigation, dispatch}) {
         <>
             <Header style={styles.menu} androidStatusBarColor="#36393E" searchBar rounded>
                 <Item>
-                    <Icon name="ios-search" />
+                    <Icon name="search" />
                     <Input
                         placeholder="Input some word"
                         value={inputText}
