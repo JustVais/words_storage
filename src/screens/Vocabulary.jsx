@@ -8,18 +8,25 @@ import { connect } from 'react-redux';
 import VocabularyItem from '../components/VocabularyItem';
 
 
-function MyVocabulary({navigation, dispatch}) {
+function Vocabulary({ navigation, dispatch }) {
 
     const [vocabulary, setVocabulary] = useState([]);
     const [refreshing, setRefreshing] = React.useState(false);
 
     useEffect(() => {
-        getAllWordsFromStorage();
+        navigation.addListener('focus', () => {
+            getAllWordsFromStorage();
+        });
+
+        return () => {
+            navigation.removeEventListener('focus', () => {
+                getAllWordsFromStorage();
+            })
+        }
     }, []);
 
     const getAllWordsFromStorage = async () => {
         setVocabulary(await AsyncStorage.getAllKeys());
-        // await AsyncStorage.clear();
     }
 
     const wait = (timeout) => {
@@ -35,19 +42,19 @@ function MyVocabulary({navigation, dispatch}) {
     }
 
     return (
-        <FlatList
-            style={styles.container}
-            data={vocabulary}
-            renderItem={({ item }) => <VocabularyItem word={item} navigation={navigation} dispatch={dispatch}/>}
-            keyExtractor={(word, index) => index}
-            refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <ScrollView refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
+            {
+                vocabulary.map((word, index) =>
+                    <VocabularyItem key={index} word={word} navigation={navigation} dispatch={dispatch} />
+                )
             }
-        />
+        </ScrollView>
     );
-}  
+}
 
-export default connect()(MyVocabulary);
+export default connect()(Vocabulary);
 
 const styles = StyleSheet.create({
     container: {

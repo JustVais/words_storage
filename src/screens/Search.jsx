@@ -24,7 +24,7 @@ function Search({ navigation, currentWord, wordInfo, dispatch }) {
     fetch("https://api.dictionaryapi.dev/api/v1/entries/en/" + currentWord, { method: 'GET' })
       .then((res) => res.json())
       .then((json) => {
-        if (!!json[0]) {
+        if (!!json[0] && Object.keys(json[0].meaning).length !== 0) {
           dispatch(setWordInfo(json[0].meaning));
         } else {
           dispatch(setWordInfo(undefined));
@@ -37,7 +37,6 @@ function Search({ navigation, currentWord, wordInfo, dispatch }) {
           SetIsFavorite(true)
         else
           SetIsFavorite(false);
-
         SetLoading(false);
       });
   }
@@ -83,7 +82,7 @@ function Search({ navigation, currentWord, wordInfo, dispatch }) {
 
   return (
     <>
-      <Menu navigation={navigation} SetLoading={SetLoading}/>
+      <Menu navigation={navigation} SetLoading={SetLoading} />
       {
         loading ?
           <View style={styles.loadingBarContainer}>
@@ -98,16 +97,16 @@ function Search({ navigation, currentWord, wordInfo, dispatch }) {
               <RefreshControl onRefresh={onRefresh} />
             }>
 
-            <Item style={styles.header}>
-              <Left>
+            <View style={styles.header}>
+              <View style={styles.headerLeft}>
                 <Text style={styles.currentWord}>{currentWord}</Text>
-              </Left>
-              <Right>
+              </View>
+              <View style={styles.headerRight}>
                 <Button transparent onPress={addOrRemoveWordFromMyVocabulary}>
-                  <Icon name="star" style={isFavorite ? styles.isFavorite : styles.isNotfavorite} />
+                  <Icon name="ios-star" style={isFavorite ? styles.isFavorite : styles.isNotfavorite} />
                 </Button>
-              </Right>
-            </Item>
+              </View>
+            </View>
             {
               !!wordInfo ?
                 <View>
@@ -151,11 +150,6 @@ let styles = StyleSheet.create({
     fontSize: 30,
   },
 
-  header: {
-    borderBottomColor: "#36393E",
-    borderBottomWidth: 2
-  },
-
   loadingBarContainer: {
     position: "absolute",
     top: 0,
@@ -173,11 +167,29 @@ let styles = StyleSheet.create({
 
   isNotfavorite: {
     fontSize: 30,
+    // backgroundColor: "red",
     color: "#36393E"
   },
 
   isFavorite: {
     fontSize: 30,
     color: "#4e77ad"
+  },
+
+  header: {
+    display: "flex",
+    flexDirection: "row",
+    borderBottomColor: "#36393E",
+    borderBottomWidth: 2,
+    alignItems: "center",
+    height: 60,
+    // backgroundColor: "red"
+  },
+
+  headerLeft: {
+    flex: 1
+  },
+
+  headerRight: {
   }
 });
